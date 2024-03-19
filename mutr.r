@@ -4,6 +4,32 @@
 # inspired by https://jera.com/techinfo/jtns/jtn002 and https://github.com/siu/minunit
 
 
+new_stack = function(init = 20L){
+    items = vector("list", init)
+    size = 0L
+
+    push = function(...){
+        new = list(...)
+        new_size = length(new) + size
+        while(new_size > length(items))
+            items[[new_size * 2L]] = list(NULL)
+
+        items[size + seq_along(new)] <<- new
+        size <<- new_size
+
+        invisible(NULL)
+        }
+
+    pop = function(n = NULL){
+        if(is.null(n)) n = size
+        size <<- size - n # no need to clean list
+        items[size + seq_len(n)]
+        }
+
+    structure(environment(), "class" = "stack")
+    }
+.errors = new_stack()
+.errors$print = "test"
 
 #' Test expression
 #'
