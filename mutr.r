@@ -45,32 +45,26 @@ new_stack = function(init = 20L){
 #'
 #' The return value, be it TRUE or FALSE, is returned invisibly.
 test = function(expr){
-    res = try(expr, silent=TRUE)
+    res = try(expr, silent = TRUE)
 
     if(class(res)[1] == "try-error"){
-        cat("Error in ", deparse(substitute(expr)),
-            ": ", attr(res, "condition")$message, "\n", sep="") 
-        return(invisible(FALSE))
+        msg = paste0("Error in ", deparse(substitute(expr)),
+            ": ", attr(res, "condition")$message, "\n")
+        } else if(!is.logical(res)){
+        msg = paste0("Error in ", deparse(substitute(expr)),
+            ": does not evaluate to TRUE/FALSE\n")
+        } else if(length(res) > 1){
+        msg = paste0("Error in ", deparse(substitute(expr)),
+            ": condition has length > 1\n")
+        } else if(!res){
+        msg = paste0("Error in ", deparse(substitute(expr)), ": is not TRUE\n")
+        } else {
+        return(invisible(TRUE))
         }
 
-    if(!is.logical(res)){
-        cat("Error in ", deparse(substitute(expr)),
-            ": does not evaluate to TRUE/FALSE\n", sep="")
-        return(invisible(FALSE))
-        }
+    if(.errors$print == "test") cat(msg) else .errors$push(msg)
 
-    if(length(res) > 1){
-        cat("Error in ", deparse(substitute(expr)),
-            ": condition has length > 1\n", sep="")
-        return(invisible(FALSE))
-        }
-
-    if(!res){
-        cat("Error in ", deparse(substitute(expr)), ": is not TRUE\n", sep="")
-        return(invisible(FALSE))
-        }
-
-    invisible(TRUE)
+    invisible(FALSE)
     }
 
 
