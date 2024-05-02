@@ -3,7 +3,21 @@
 # Minimal test framework
 # inspired by https://jera.com/techinfo/jtns/jtn002 and https://github.com/siu/minunit
 
-
+#' Create new stack object
+#'
+#' Create a new stack object with reference semantics with two methods
+#' `push` adds objects to the stack and `pop` removes them.
+#'
+#' This is dependency-free class based on function closures with reference semantics.
+#' Internally, the stack is represented as a pre-allocated `list` that is extended as required.
+#' Initially, the size of the `list` is set to the `init`, and each time it needs to be extended
+#' it is extended by the `init` value as well.
+#'
+#' The `pop(n)` method removes `n` latest items added to stack. When `n` is not specified,
+#' all items are removed and the stack is emptied.
+#'
+#' @param init an initial size of the stack
+#' @return an environment containing callable methods using the `env$method()` semantics
 new_stack = function(init = 20L){
     items = vector("list", init)
     size = 0L
@@ -12,7 +26,7 @@ new_stack = function(init = 20L){
         new = list(...)
         new_size = length(new) + size
         while(new_size > length(items))
-            items[[new_size * 2L]] = list(NULL)
+            items[[length(items) + init]] = list(NULL)
 
         items[size + seq_along(new)] <<- new
         size <<- new_size
@@ -76,10 +90,10 @@ test = function(expr){
 #' This error can be optionally turned into warning, message, or turned off completely with
 #' `test_suite(..., throw=FALSE)`.
 test_suite = function(..., throw=c("error", "warning", "message", FALSE)){
-    throw = match.arg(as.character(throw), throw)    
+    throw = match.arg(as.character(throw), throw)
 
     tests = list(...)
-    res = sapply(tests, eval)
+    res = unlist(sapply(tests, eval))
 
     cat("[", length(res), "tests:", sum(!res), "failed,", sum(res), "passed ]\n\n")
 
@@ -94,6 +108,16 @@ test_suite = function(..., throw=c("error", "warning", "message", FALSE)){
 
     invisible(all(res)) 
     }
+
+
+test_set = function(..., msg = ""){
+    function(){
+    cat(msg, ": ", sep="")
+    tests = list(...)
+    res = sapply(tests, eval)
+    if(all(res)) cat("OK\n") else cat("FAIL\n")
+    res
+    }}
 
 
 # TODO
