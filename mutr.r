@@ -44,29 +44,37 @@ new_stack = function(init = 20L){
     }
 
 
-new_mutr = function(){
+new_mutr = function(print = c("test", "set", "end")){
     sets = 0
     tests = 0
+    failed = 0
     passed = 0
+    set_failed = FALSE
+    print = match.arg(print)
     messages = new_stack()
 
     add = function(x){
         tests <<- tests + 1L
 
-        if(isTRUE(x))
+        if(isTRUE(x)){
             passed <<- passed + 1L
+            } else {
+            failed <<- failed + 1L
+            set_failed <<- TRUE
+            }
         }
 
-    add_set(){
-        sets <<- sets + 1
+    add_set = function(){
+        sets <<- sets + 1L
+        set_failed <<- FALSE
         }
 
     structure(environment(), "class" = "counter")
     }
 
 
-init_mutr = function(){
-    mutr = new_mutr()
+init_mutr = function(print){
+    mutr = new_mutr(print)
     env = globalenv()
     env$.mutr = mutr
 
@@ -74,10 +82,23 @@ init_mutr = function(){
     }
 
 
-deinit_mutr = function(){
-    env = globalenv()
-    rm(".mutr", envir = globalenv())
+deinit_mutr = function(print = FALSE){
+    env = globalenv()$.mutr
 
+    if(print){
+        cat(
+            "[",
+            env$sets, "sets,",
+            env$tests, "tests:",
+            env$failed, "failed,",
+            env$passed, "passed",
+            "]\n\n"
+            )
+
+        if(env$failed != 0)
+            cat("Some tests did not pass.\n")
+        }
+    rm(".mutr", envir = globalenv())
     invisible()
     }
 
@@ -97,32 +118,33 @@ deinit_mutr = function(){
 #' The return value, be it TRUE or FALSE, is returned invisibly.
 test = function(expr){
     res = try(expr, silent = TRUE)
+    expr = paste0(deparse(substitute(expr)), collapse = "")
 
     if(isTRUE(res)){
-        msg = paste0("Passed: ", deparse(substitute(expr)), " is TRUE", "\n")
+        msg = paste0("Passed: ", expr, " is TRUE", "\n")
         } else if(class(res)[1] == "try-error"){
-        msg = paste0("Error in ", deparse(substitute(expr)),
+        msg = paste0("Error in ", expr,
             ": ", attr(res, "condition")$message, "\n")
         } else if(!is.logical(res)){
-        msg = paste0("Error in ", deparse(substitute(expr)),
+        msg = paste0("Error in ", expr,
             ": does not evaluate to TRUE/FALSE\n")
         } else if(length(res) > 1){
-        msg = paste0("Error in ", deparse(substitute(expr)),
+        msg = paste0("Error in ", expr,
             ": condition has length > 1\n")
         } else if(!res){
-        msg = paste0("Error in ", deparse(substitute(expr)), ": is not TRUE\n")
+        msg = paste0("Error in ", expr, ": is not TRUE\n")
         } else {
-        stop("Unknown condition in ", deparse(subtitute(expr)), ": ", res, "\n")
+        stop("Unknown condition in ", expr, ": ", res, "\n")
         }
 
     if(exists(".mutr", envir = globalenv(), mode = "environment")){
         env = globalenv()$.mutr
         env$add(res)
 
-        if(env$print == "test" && !isTRUE(res)){
+        if(env$print == "test"){
             cat(msg)
             } else {
-            env$messages$push(msg)
+            if(!isTRUE(res)) env$messages$push(msg)
             }
 
         } else {
@@ -133,68 +155,33 @@ test = function(expr){
     }
 
 
-#' Simple test-suite
-#'
-#' Simple test-suite to collate and evaluate multiple tests, which themselves are passed
-#' as multiple arguments. A diagnostic message is printed to show the number of passed/failed
-#' tests. In addition, an error is thrown if some some tests did not pass.
-#' This error can be optionally turned into warning, message, or turned off completely with
-#' `test_suite(..., throw=FALSE)`.
-test_suite = function(..., throw=c("error", "warning", "message", FALSE)){
-    throw = match.arg(as.character(throw), throw)
-
-    tests = list(...)
-    res = unlist(sapply(tests, eval))
-
-    cat("[", length(res), "tests:", sum(!res), "failed,", sum(res), "passed ]\n\n")
-
-    if(!all(res)){
-        msg = "Some tests did not pass."
-        switch(throw, # unfortunatelly, these functions do not have unified response form
-            "error" = stop(msg, call.=FALSE),
-            "warning" = warning(msg, call.=FALSE, immediate.=TRUE),
-            "message" = message("Note: ", msg),
-            "FALSE" = "")
+test_set = function(msg, expr){
+    if(!exists(".mutr", envir = globalenv(), mode = "environment")){
+        init_mutr("set")
+        on.exit(deinit_mutr(print = TRUE), add = TRUE)
         }
+    env = globalenv()$.mutr
+    env$add_set()
 
-    invisible(all(res)) 
+    res = try(expr, silent = TRUE)
+
+
+    cat(msg, ": ", sep = "")
+    if(class(res)[1] == "try-error" || env$set_failed) cat("FAIL\n") else cat("PASS\n")
+
+    if(env$print == "set" && env$set_failed) cat(unlist(env$messages$pop()))
+
+    invisible()
     }
 
-
-test_set = function(..., msg = ""){
-    function(){
-    cat(msg, ": ", sep="")
-    tests = list(...)
-    res = sapply(tests, eval)
-    if(all(res)) cat("OK\n") else cat("FAIL\n")
-    res
-    }}
-
-
-# TODO
-# test_set -- set of tests with name
-# example:
-# test_foo = test_set(...)
-# test_bar = test_set(...)
-# test_suite(
-#     test_foo,
-#     test_bar
-#     )
 
 #' Test if an object is an error
 is_error = function(x){
     inherits(x, c("try-error", "error", "simpleError"))
     }
 
+
 #' Negate usable in a pipe
 not = function(x){
     !x
     }
-
-# Example of usage of test and test-suite
-#test_suite(throw="message",
-#    test(FALSE),
-#    test(TRUE),
-#    test(stop("This will throw an error")),
-#    test(1)
-#    )
