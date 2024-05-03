@@ -42,8 +42,45 @@ new_stack = function(init = 20L){
 
     structure(environment(), "class" = "stack")
     }
-.errors = new_stack()
-.errors$print = "test"
+
+
+new_mutr = function(){
+    sets = 0
+    tests = 0
+    passed = 0
+    messages = new_stack()
+
+    add = function(x){
+        tests <<- tests + 1L
+
+        if(isTRUE(x))
+            passed <<- passed + 1L
+        }
+
+    add_set(){
+        sets <<- sets + 1
+        }
+
+    structure(environment(), "class" = "counter")
+    }
+
+
+init_mutr = function(){
+    mutr = new_mutr()
+    env = globalenv()
+    env$.mutr = mutr
+
+    invisible()
+    }
+
+
+deinit_mutr = function(){
+    env = globalenv()
+    rm(".mutr", envir = globalenv())
+
+    invisible()
+    }
+
 
 #' Test expression
 #'
@@ -61,7 +98,9 @@ new_stack = function(init = 20L){
 test = function(expr){
     res = try(expr, silent = TRUE)
 
-    if(class(res)[1] == "try-error"){
+    if(isTRUE(res)){
+        msg = paste0("Passed: ", deparse(substitute(expr)), " is TRUE", "\n")
+        } else if(class(res)[1] == "try-error"){
         msg = paste0("Error in ", deparse(substitute(expr)),
             ": ", attr(res, "condition")$message, "\n")
         } else if(!is.logical(res)){
@@ -73,12 +112,24 @@ test = function(expr){
         } else if(!res){
         msg = paste0("Error in ", deparse(substitute(expr)), ": is not TRUE\n")
         } else {
-        return(invisible(TRUE))
+        stop("Unknown condition in ", deparse(subtitute(expr)), ": ", res, "\n")
         }
 
-    if(.errors$print == "test") cat(msg) else .errors$push(msg)
+    if(exists(".mutr", envir = globalenv(), mode = "environment")){
+        env = globalenv()$.mutr
+        env$add(res)
 
-    invisible(FALSE)
+        if(env$print == "test" && !isTRUE(res)){
+            cat(msg)
+            } else {
+            env$messages$push(msg)
+            }
+
+        } else {
+        cat(msg)
+        }
+
+    invisible(res)
     }
 
 
