@@ -44,7 +44,7 @@ new_stack = function(init = 20L){
     }
 
 
-new_mutr = function(print = c("test", "set", "end")){
+new_mutr = function(print = c("test", "set", "exit")){
     sets = 0
     tests = 0
     failed = 0
@@ -84,6 +84,7 @@ init_mutr = function(print){
 
 deinit_mutr = function(print = FALSE){
     env = globalenv()$.mutr
+    rm(".mutr", envir = globalenv())
 
     if(print){
         cat(
@@ -95,10 +96,12 @@ deinit_mutr = function(print = FALSE){
             "]\n\n"
             )
 
+        if(env$failed != 0 && env$print == "exit")
+            cat(unlist(env$messages$pop()))
         if(env$failed != 0)
-            cat("Some tests did not pass.\n")
+            stop("Some tests did not pass.\n", call. = FALSE)
         }
-    rm(".mutr", envir = globalenv())
+
     invisible()
     }
 
@@ -166,7 +169,7 @@ test_set = function(msg, expr){
     res = try(expr, silent = TRUE)
 
 
-    cat(msg, ": ", sep = "")
+    cat("  ", msg, ": ", sep = "")
     if(class(res)[1] == "try-error" || env$set_failed) cat("FAIL\n") else cat("PASS\n")
 
     if(env$print == "set" && env$set_failed) cat(unlist(env$messages$pop()))
@@ -174,6 +177,29 @@ test_set = function(msg, expr){
     invisible()
     }
 
+
+test_file = function(file){
+    if(!exists(".mutr", envir = globalenv(), mode = "environment")){
+            init_mutr("exit")
+            on.exit(deinit_mutr(print = TRUE), add = TRUE)
+            }
+
+    source(file, chdir = TRUE)
+
+    invisible()
+    }
+
+
+test_dir = function(dir){
+    if(!exists(".mutr", envir = globalenv(), mode = "environment")){
+                init_mutr("exit")
+                on.exit(deinit_mutr(print = TRUE), add = TRUE)
+                }
+    files = dir(dir, "^test[^.]*\\.[rR]$", full.names = TRUE)
+    lapply(files, test_file)
+
+    invisible()
+    }
 
 #' Test if an object is an error
 is_error = function(x){
