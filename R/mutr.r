@@ -201,6 +201,7 @@ test_dir = function(dir){
     invisible()
     }
 
+
 #' Test if an object is an error
 is_error = function(x){
     inherits(x, c("try-error", "error", "simpleError"))
