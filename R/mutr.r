@@ -5,19 +5,39 @@
 
 #' Create new stack object
 #'
-#' Create a new stack object with reference semantics with two methods
+#' @description
+#' Create a new stack object with reference semantics and two methods,
 #' `push` adds objects to the stack and `pop` removes them.
 #'
+#' @details
 #' This is dependency-free class based on function closures with reference semantics.
 #' Internally, the stack is represented as a pre-allocated `list` that is extended as required.
-#' Initially, the size of the `list` is set to the `init`, and each time it needs to be extended
-#' it is extended by the `init` value as well.
+#' The size of the `list` is set to the `init`, and is dynamically extended by the `init` value.
 #'
-#' The `pop(n)` method removes `n` latest items added to stack. When `n` is not specified,
-#' all items are removed and the stack is emptied.
+#' Following methods are available:
+#'
+#' * `push(...)` - element or elements to stack, elements are converted to list
+#' * `pop(n)` - removes and returns `n` latest elements from stack, if `n` is missing, remove all elements
+#'
+#' Following slots are available:
+#'
+#' * items - stack memory, a pre-allocated
+#' * size - current size of the stack
+#'
+#' Modifying these slots could lead to inconsistent behaviour.
 #'
 #' @param init an initial size of the stack
-#' @return an environment containing callable methods using the `env$method()` semantics
+#' @return an environment containing callable methods, see details
+#'
+#' @examples
+#' s = new_stack()
+#' s$push("foo", "bar", "baz")
+#'
+#' identical(s$pop(1), list("foo"))
+#' identical(s$pop(), list("bar", "baz"))
+#' identical(s$pop(), list())
+#'
+#' @export
 new_stack = function(init = 20L){
     items = vector("list", init)
     size = 0L
@@ -44,35 +64,63 @@ new_stack = function(init = 20L){
     }
 
 
+#' Create, initialize, and deinitialize mutr object
+#'
+#' @description
+#' Create, initialize, and deinitialize a mutr object.
+#'
+#' @details
+#' This objects stores information required to track tests, test sets, and their error messages.
+#'
+#' `new_mutr` creates a new object, `init_mutr` saves it and `deinit_mutr` removes it from the
+#' user's global environment. Before the removal, `deinit_mutr` also prints test results.
+#'
+#' The `print` argument specifies when the errors are being printed,
+#' whether after each `test`, `test_set`, on exit during de-initialization.
+#' These are handled in `test`, `test_set`, and `test_file` or `test_dir`.
+#'
+#' Methods:
+#'
+#' * add(x) -- append test result 'x' to the memory
+#' * add_set() -- increase the set ounter by one
+#'
+#' Slots:
+#'
+#' * sets -- the total number of test sets, see `[test_set]`
+#' * tests -- the total number of tests
+#' * failed -- the number of failed tests
+#' * print -- when to print errors, see details
+#'
+#' @param print when to print errors, see details
+#' @return `new_mutr` returns an environment containing callable methods,
+#'         `init_mutr` and `deinit_mutr` are run for side-effects.
+#'
+#' @export
 new_mutr = function(print = c("test", "set", "exit")){
     sets = 0
     tests = 0
     failed = 0
-    passed = 0
-    set_failed = FALSE
     print = match.arg(print)
     messages = new_stack()
 
     add = function(x){
         tests <<- tests + 1L
 
-        if(isTRUE(x)){
-            passed <<- passed + 1L
-            } else {
+        if(!isTRUE(x)){
             failed <<- failed + 1L
-            set_failed <<- TRUE
             }
         }
 
     add_set = function(){
         sets <<- sets + 1L
-        set_failed <<- FALSE
         }
 
     structure(environment(), "class" = "counter")
     }
 
 
+#' @rdname new_mutr
+#' @export
 init_mutr = function(print){
     mutr = new_mutr(print)
     env = globalenv()
@@ -82,6 +130,8 @@ init_mutr = function(print){
     }
 
 
+#' @rdname new_mutr
+#' @export
 deinit_mutr = function(print = FALSE){
     env = globalenv()$.mutr
     rm(".mutr", envir = globalenv())
@@ -92,7 +142,7 @@ deinit_mutr = function(print = FALSE){
             env$sets, "sets,",
             env$tests, "tests:",
             env$failed, "failed,",
-            env$passed, "passed",
+            env$tests - env$failed, "passed",
             "]\n\n"
             )
 
@@ -166,13 +216,14 @@ test_set = function(msg, expr){
     env = globalenv()$.mutr
     env$add_set()
 
+    before = env$failed
     res = try(expr, silent = TRUE)
-
+    set_failed = env$failed > before
 
     cat("  ", msg, ": ", sep = "")
-    if(class(res)[1] == "try-error" || env$set_failed) cat("FAIL\n") else cat("PASS\n")
+    if(class(res)[1] == "try-error" || set_failed) cat("FAIL\n") else cat("PASS\n")
 
-    if(env$print == "set" && env$set_failed) cat(unlist(env$messages$pop()))
+    if(env$print == "set" && set_failed) cat(unlist(env$messages$pop()))
 
     invisible()
     }
