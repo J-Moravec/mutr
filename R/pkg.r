@@ -40,6 +40,14 @@ check_pkg = function(pkg = ".", as_cran = FALSE){
     }
 
 
+document_pkg = function(pkg = "."){
+    if(!requireNamespace("roxygen2"))
+        stop("package roxygen2 required")
+
+    roxygen2::roxygenize(pkg)
+    }
+
+
 pkg_build = function(pkg, path = tempdir()){
     res = tools::Rcmd(c("build", "--no-build-vignettes", "--no-manual", pkg))
     if(res != 0) stop("build error", call. = FALSE)
