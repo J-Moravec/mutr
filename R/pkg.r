@@ -32,7 +32,7 @@ test_pkg = function(pkg = "."){
     }
 
 
-check_pkg = function(pkg = ".", as_cran = FALSE){
+check = function(pkg = ".", as_cran = FALSE){
     tmp = tempdir()
 
     pkg_file = pkg_build(pkg)
@@ -40,7 +40,7 @@ check_pkg = function(pkg = ".", as_cran = FALSE){
     }
 
 
-document_pkg = function(pkg = "."){
+document = function(pkg = "."){
     if(!requireNamespace("roxygen2"))
         stop("package roxygen2 required")
 
