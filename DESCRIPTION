@@ -12,8 +12,13 @@ Description: A Minimal Unit-Testing Framework in R, for scripts or packages.
     Simply copy the main file into your project and write some tests for a
     dependency-free workflow, use the package as a simple lightweight
     dependency.
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.1
 URL: https://github.com/j-moravec/mutr
 BugReports: https://github.com/j-moravec/mutr/issues
+Imports:
+    tools,
+    utils
+Suggests:
+    roxygen2

@@ -3,66 +3,6 @@
 # Minimal test framework
 # inspired by https://jera.com/techinfo/jtns/jtn002 and https://github.com/siu/minunit
 
-#' Create new stack object
-#'
-#' @description
-#' Create a new stack object with reference semantics and two methods,
-#' `push` adds objects to the stack and `pop` removes them.
-#'
-#' @details
-#' This is dependency-free class based on function closures with reference semantics.
-#' Internally, the stack is represented as a pre-allocated `list` that is extended as required.
-#' The size of the `list` is set to the `init`, and is dynamically extended by the `init` value.
-#'
-#' Following methods are available:
-#'
-#' * `push(...)` - element or elements to stack, elements are converted to list
-#' * `pop(n)` - removes and returns `n` latest elements from stack, if `n` is missing, remove all elements
-#'
-#' Following slots are available:
-#'
-#' * items - stack memory, a pre-allocated
-#' * size - current size of the stack
-#'
-#' Modifying these slots could lead to inconsistent behaviour.
-#'
-#' @param init an initial size of the stack
-#' @return an environment containing callable methods, see details
-#'
-#' @examples
-#' s = new_stack()
-#' s$push("foo", "bar", "baz")
-#'
-#' identical(s$pop(1), list("foo"))
-#' identical(s$pop(), list("bar", "baz"))
-#' identical(s$pop(), list())
-#'
-#' @export
-new_stack = function(init = 20L){
-    items = vector("list", init)
-    size = 0L
-
-    push = function(...){
-        new = list(...)
-        new_size = length(new) + size
-        while(new_size > length(items))
-            items[[length(items) + init]] = list(NULL)
-
-        items[size + seq_along(new)] <<- new
-        size <<- new_size
-
-        invisible(NULL)
-        }
-
-    pop = function(n = NULL){
-        if(is.null(n)) n = size
-        size <<- size - n # no need to clean list
-        items[size + seq_len(n)]
-        }
-
-    structure(environment(), "class" = "stack")
-    }
-
 
 #' Create, initialize, and deinitialize mutr object
 #'
@@ -77,11 +17,11 @@ new_stack = function(init = 20L){
 #'
 #' The `print` argument specifies when the errors are being printed,
 #' whether after each `test`, `test_set`, on exit during de-initialization.
-#' These are handled in `test`, `test_set`, and `test_file` or `test_dir`.
+#' These are handled in `test`, `test_set`,`test_file`, and `test_dir`.
 #'
 #' Methods:
 #'
-#' * add(x) -- append test result 'x' to the memory
+#' * add_test(x) -- append test result 'x' to the memory
 #' * add_set() -- increase the set ounter by one
 #'
 #' Slots:
@@ -103,7 +43,7 @@ new_mutr = function(print = c("test", "set", "exit")){
     print = match.arg(print)
     messages = new_stack()
 
-    add = function(x){
+    add_test = function(x){
         tests <<- tests + 1L
 
         if(!isTRUE(x)){
@@ -158,17 +98,28 @@ deinit_mutr = function(print = FALSE){
 
 #' Test expression
 #'
-#' Test provided expression for true-ness. Returns `TRUE` only if the expression evaluates
-#' to `TRUE`. Any other condition results in `FALSE` with different diagnostic expression
+#' Test provided expression for true-ness, the evaluated expression is returned invisibly.
+#' If the `.mutr` object exists, the test counter is increased and the error message is appended.
+#' Otherwise, the error message is printed.
+#'
+#' Any other condition than `TRUE` results in a differe with different diagnostic expression
 #' depending on the evaluation. For this purpose, `test` distinguishes between:
 #'
-#' * raised error
+#' * error condition
 #' * non-logical object
 #' * logical object with length > 1
 #' * singular logical FALSE
 #' * singular logical TRUE
 #'
-#' The return value, be it TRUE or FALSE, is returned invisibly.
+#' @param expr an expression to be evaluated
+#' @return an evaluated expression
+#'
+#' @export
+#'
+#' @examples
+#' test(TRUE)
+#' test(FALSE)
+#' test(stop())
 test = function(expr){
     res = try(expr, silent = TRUE)
     expr = paste0(deparse(substitute(expr)), collapse = "")
@@ -190,9 +141,10 @@ test = function(expr){
         stop("Unknown condition in ", expr, ": ", res, "\n")
         }
 
+    # TODO this could be simplified
     if(exists(".mutr", envir = globalenv(), mode = "environment")){
         env = globalenv()$.mutr
-        env$add(res)
+        env$add_test(res)
 
         if(env$print == "test"){
             cat(msg)
@@ -208,6 +160,25 @@ test = function(expr){
     }
 
 
+#' Test context
+#'
+#' Run the `test` functions in a context, such as set, file, or a directory.
+#'
+#' These function establish context for tests so that a structured test-suite can be constructed.
+#' Each of the context functions `test_set`, `test_file`, and `test_dir` initialize the `.mutr`
+#' object if it doesn't already exists, and create a `on.exit` destructor to print the test
+#' result.
+#'
+#' @param msg a name of the set
+#' @param expr an expression containing `test`s, since only the `mutr::test` functions append
+#' to the `.mutr` object, any other expressions won't influence the test counter.
+#' @param file a file containing `test_set`s and `test`s
+#' @param dir a directory containing files starting with `test`
+#' @name test_context
+
+#' @rdname test_context
+#' @export
+#'
 test_set = function(msg, expr){
     if(!exists(".mutr", envir = globalenv(), mode = "environment")){
         init_mutr("set")
@@ -229,6 +200,8 @@ test_set = function(msg, expr){
     }
 
 
+#' @rdname test_context
+#' @export
 test_file = function(file){
     if(!exists(".mutr", envir = globalenv(), mode = "environment")){
             init_mutr("exit")
@@ -241,6 +214,9 @@ test_file = function(file){
     }
 
 
+
+#' @rdname test_context
+#' @export
 test_dir = function(dir){
     if(!exists(".mutr", envir = globalenv(), mode = "environment")){
                 init_mutr("exit")
@@ -250,16 +226,4 @@ test_dir = function(dir){
     lapply(files, test_file)
 
     invisible()
-    }
-
-
-#' Test if an object is an error
-is_error = function(x){
-    inherits(x, c("try-error", "error", "simpleError"))
-    }
-
-
-#' Negate usable in a pipe
-not = function(x){
-    !x
     }
