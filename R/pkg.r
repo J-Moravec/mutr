@@ -46,7 +46,7 @@ check = function(pkg = ".", as_cran = FALSE){
     tmp = tempdir()
 
     pkg_file = pkg_build(pkg)
-    pkg_check(pkg_file, as_cran)
+    pkg_check(pkg_file, as_cran = as_cran)
     }
 
 
@@ -69,7 +69,8 @@ document = function(pkg = "."){
 #' The `pkg_name` is an utility functions that reads the `DESCRIPTION` file and returns the
 #' package name.
 #'
-#' @param pkg a path to package
+#' @param pkg a path to package source (`pkg_install()`, `pkg_build()`, `pkg_name()`)
+#' or tarball (`pkg_install()`, `pkg_check()`)
 #' @param path a path where package is installed, build, or checked, defaults to `tempdir()`
 #' @param as_cran whether to run `R CMD check` with the `--as-cran` preset
 #' @return `pkg_install` and `pkg_check` do not have a return value,

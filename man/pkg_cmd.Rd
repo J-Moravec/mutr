@@ -12,12 +12,13 @@ pkg_install(pkg, path = tempdir())
 
 pkg_build(pkg, path = tempdir())
 
-pkg_check(pkg, as_cran = FALSE)
+pkg_check(pkg, path = tempdir(), as_cran = FALSE)
 
 pkg_name(pkg)
 }
 \arguments{
-\item{pkg}{a path to package}
+\item{pkg}{a path to package source (`pkg_install()`, `pkg_build()`, `pkg_name()`)
+or tarball (`pkg_install()`, `pkg_check()`)}
 
 \item{path}{a path where package is installed, build, or checked, defaults to `tempdir()`}
 
