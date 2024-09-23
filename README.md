@@ -120,4 +120,4 @@ I have been using `mutr` for some non-package projects to make sure that they ar
 In fact, after a proof of concept was written, refactoring was done through a test-driven development. Being able to quickly setup testing and write tests made this quite productive.
 
 * [rargs](https://github.com/J-Moravec/rargs) -- POSIX compatible copy-pastable argument parser
-* [ncbi.r](https://github.com/J-Moravec/ncbi) -- Download reference genomes from NCBI
+* [ncbi.r](https://github.com/J-Moravec/ncbi.r) -- Download reference genomes from NCBI
