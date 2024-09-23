@@ -110,6 +110,14 @@ On the other hand, `mutr` will stay as it is. If it does job for you, no need to
 
 `mutr` evolved from something I needed to quickly test some local code in an analysis, to a more complex package that tracked errors, to a simplified framework to said package, to the simplified framework itself.
 
-`mutr` doesn't need to be package. It is just a few lines of code, the packaging framework would perhaps double its size and making its usage more cumbersome, as well as hid implementation details. Making a package from it would just hinder its potential.
+`mutr` doesn't need to be package. It is just a few lines of code, the packaging framework would perhaps double its size and making its usage more cumbersome, as well as hide implementation details. Making a package from it would just hinder its potential.
 
 `mutr` can be just copied where you want it. Changed as you need it, adapted to your personal needs. As with the original inspiration, unit-testing framework doesn't have to be complex to do what you need. Just fork it, or just copy and personalize it, ship it with your code.
+
+## Examples:
+
+I have been using `mutr` for some non-package projects to make sure that they are bug-free.
+In fact, after a proof of concept was written, refactoring was done through a test-driven development. Being able to quickly setup testing and write tests made this quite productive.
+
+* [rargs](https://github.com/J-Moravec/rargs) -- POSIX compatible copy-pastable argument parser
+* [ncbi.r](https://github.com/J-Moravec/ncbi) -- Download reference genomes from NCBI
