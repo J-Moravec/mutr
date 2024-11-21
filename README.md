@@ -121,3 +121,4 @@ In fact, after a proof of concept was written, refactoring was done through a te
 
 * [rargs](https://github.com/J-Moravec/rargs) -- POSIX compatible copy-pastable argument parser
 * [ncbi.r](https://github.com/J-Moravec/ncbi.r) -- Download reference genomes from NCBI
+* [blastr](https://github.com/J-Moravec/blastr) -- A lightweight binding to NCBI BLAST+
