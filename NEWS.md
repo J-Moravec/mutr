@@ -1,3 +1,10 @@
+# mutr 0.0.3
+
+* added `ASSERT`, a variant of `TEST` that doesn't increase test count
+* multiple asserts can be grouped within a single `TEST_UNIT`
+* `TEST_UNIT` prints its own message if one or more `ASSERT` calls fail
+* also added `ASSERT_ERROR` and `ASSERT_NOT_ERROR` variants of `TEST_ERROR` and `TEST_NOT_ERROR`
+
 # mutr 0.0.2
 
 * added `TEST_NOT_ERROR` to check that the expression doesn't throw error

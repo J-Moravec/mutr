@@ -1,6 +1,6 @@
 # mutr: minimal unit-testing framework
 # inspired by https://jera.com/techinfo/jtns/jtn002
-# version: 0.0.2
+# version: 0.0.3
 # https://github.com/J-Moravec/mutr
 
 TEST_INIT = function(){
@@ -8,7 +8,7 @@ TEST_INIT = function(){
     env$FAIL = 0
     env$TOTAL = 0
     env$SETS = 0
-
+    env$UNIT = FALSE
     assign(".TESTS", env, envir = globalenv())
     }
 
@@ -93,4 +93,50 @@ TEST_NOT_ERROR = function(expr, msg = "does signal an error!", call = NULL){
     if(is.null(call)) call = deparse(substitute(expr)) |> paste0(collapse = "")
     e = tryCatch(expr, error = \(e) e)
     is.error(e) |> not() |> TEST(call = call, msg = msg)
+    }
+
+
+TEST_UNIT = function(msg, expr){
+    env = get(".TESTS", envir = globalenv())
+    env$TOTAL = env$TOTAL + 1
+    env$UNIT = FALSE
+
+    eval(expr, environment())
+
+    if(env$UNIT){
+        env$FAIL = env$FAIL + 1
+        cat("  ", msg, "\n", sep = "")
+        }
+
+    }
+
+
+ASSERT = function(expr, msg = "is not TRUE!", call = NULL){
+    if(is.null(call)) call = deparse(substitute(expr)) |> paste0(collapse = "")
+    res = try(expr, silent = TRUE)
+
+    if(!isTRUE(res)){
+        env = get(".TESTS", envir = globalenv())
+        env$UNIT = TRUE
+
+        cat("  Error in ", call, ": ", msg, "\n", sep = "")
+        }
+
+    invisible(res)
+    }
+
+
+ASSERT_ERROR = function(
+    expr, msg = "does not signal specified error!", pattern = "", call = NULL
+    ){
+    if(is.null(call)) call = deparse(substitute(expr)) |> paste0(collapse = "")
+    e = tryCatch(expr, error = \(e) e)
+    (is.error(e) && grepl(pattern, conditionMessage(e))) |> ASSERT(call = call, msg = msg)
+    }
+
+
+ASSERT_NOT_ERROR = function(expr, msg = "does signal an error!", call = NULL){
+    if(is.null(call)) call = deparse(substitute(expr)) |> paste0(collapse = "")
+    e = tryCatch(expr, error = \(e) e)
+    is.error(e) |> not() |> ASSERT(call = call, msg = msg)
     }

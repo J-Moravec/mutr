@@ -57,6 +57,18 @@ TEST__FAIL(stop("foo"), f = TEST_NOT_ERROR,
            .msg = "  Error in stop(\"foo\"): does signal an error!")
 TEST__CHECK(9, 15, 1)
 
+# ASSERT does not increase test count
+TEST__PASS(TRUE, f = ASSERT)
+TEST__FAIL(FALSE, f = ASSERT)
+TEST__CHECK(9, 15, 1)
+
+# TEST_UNIT should consist of one or more asserts
+TEST__PASS(ASSERT(TRUE), f = TEST_UNIT, msg = "")
+TEST__CHECK(9, 16, 1)
+TEST__FAIL(ASSERT(FALSE), f = TEST_UNIT, msg = "Unit: FAILS",
+           .msg = c("  Error in FALSE: is not TRUE!", "  Unit: FAILS"))
+TEST__CHECK(10, 17, 1)
+
 # Cleanup
 TEST__RESET()
 rm("TEST__CHECK", "TEST__FAIL", "TEST__PASS", "TEST__RESET")
