@@ -1,3 +1,12 @@
+# mutr 0.0.4
+
+* added `SET_CONTEXT`, `ADD_CONTEXT`, `TEST_CONTEXT`
+* added `indent = "  "`, and `print_level = 1` arguments to `TEST_INIT()`
+* context message (from `TEST_SET` and `CONTEXT` functions) is printed only on test failure,
+  if the nesting level is larger than `print_level`
+* improved tests and their organisation in `test-mutr.r`
+* these changes allow enhancing groups of tests with informative messages that are printed only on test failure, while reducing the total amount of messages that are being printed when test succeed
+
 # mutr 0.0.3
 
 * added `ASSERT`, a variant of `TEST` that doesn't increase test count
