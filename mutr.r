@@ -145,16 +145,16 @@ TEST_DIR = function(dir){
 TEST_ERROR = function(
     expr, msg = "does not signal specified error!", pattern = "", call = NULL, test = TRUE){
     if(is.null(call)) call = paste0(deparse(substitute(expr)), collapse = "")
-    e = tryCatch(expr, error = \(e) e)
-    (is.error(e) && grepl(pattern, conditionMessage(e))) |>
-        TEST(call = call, msg = msg, test = test)
+    e = tryCatch(expr, error = function(e) e)
+    TEST((is.error(e) && grepl(pattern, conditionMessage(e))),
+        call = call, msg = msg, test = test)
     }
 
 
 TEST_NOT_ERROR = function(expr, msg = "does signal an error!", call = NULL, test = TRUE){
     if(is.null(call)) call = paste0(deparse(substitute(expr)), collapse = "")
-    e = tryCatch(expr, error = \(e) e)
-    is.error(e) |> not() |> TEST(call = call, msg = msg, test = test)
+    e = tryCatch(expr, error = function(e) e)
+    TEST(!is.error(e), call = call, msg = msg, test = test)
     }
 
 

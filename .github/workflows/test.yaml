@@ -8,26 +8,21 @@ jobs:
     test:
         strategy:
             matrix:
-                include:
-                    - name: r-minimal:devel
-                    image: rhub/r-minimal:devel
-                include:
-                    - name: r-minimal:latest
-                    image: rhub/r-minimal:latest
-                include:
-                    - name: r-minimal:4.0
-                    image: rhub/r-minimal:4.0
+                image:
+                    - rhub/r-minimal:devel
+                    - rhub/r-minimal:latest
+                    - rhub/r-minimal:4.0
 
         runs-on: ubuntu-latest
         container:
-        image: ${{ matrix.image }}
+            image: ${{ matrix.image }}
 
         steps:
             - name: Checkout
-                uses: actions/checkout@v4
+              uses: actions/checkout@v4
 
             - name: test mutr
-                run: Rscript -e 'source("mutr.r"); source("test-mutr.r")'
+              run: Rscript -e 'source("mutr.r"); source("test-mutr.r")'
 
             - name: test examples
-                run: Rscript examples/test_all.r
+              run: Rscript examples/test_all.r

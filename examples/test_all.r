@@ -1,9 +1,6 @@
 set_script_dir = function(){
-    dir = commandArgs(FALSE) |>
-        grep(pattern = "^--file=", value = TRUE) |>
-        getElement(1) |>
-        sub(pattern = "^--file=", replacement = "") |>
-        dirname()
+    file = grep(commandArgs(FALSE), pattern = "^--file=", value = TRUE)[1]
+    dir = dirname(sub(file, pattern = "^--file=", replacement = ""))
     setwd(dir)
     }
 
