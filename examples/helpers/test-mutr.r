@@ -93,6 +93,17 @@ TEST__CHECK(1, 3, 0)
 TEST__RESET()
 
 
+# Context manipulation:
+TEST__FAIL(expr = {
+    TEST_CONTEXT("a", {ADD_CONTEXT("b")})
+    TEST_CONTEXT("c", {TEST(FALSE)})
+    }, msg = "",
+    f = TEST_CONTEXT,
+    .msg = c("  c", "    Error in FALSE: is not TRUE!")
+    )
+TEST__RESET()
+
+
 ## Check derived functions: TEST_ERROR, TEST_NOT_ERROR
 TEST__PASS(stop("foo"), f = TEST_ERROR)
 TEST__PASS(stop("foo"), f = TEST_ERROR, pattern = "foo")

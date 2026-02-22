@@ -23,7 +23,7 @@ not = function(x){
     }
 
 
-TEST_INIT = function(indent = "  ", print_level = 0){
+TEST_INIT = function(indent = "  ", print_level = 1){
     FAIL = 0
     TOTAL = 0
     SETS = 0
@@ -34,15 +34,18 @@ TEST_INIT = function(indent = "  ", print_level = 0){
     MESSAGE = vector("character", 64)
     rm(indent, print_level)
 
-    CONTEXT = function(msg = ""){
-        if(is.null(msg) || msg == "") return(invisible())
-        msg = paste0(strrep(INDENT, LEVEL), msg, "\n")
-        if(PRINT_LEVEL >= LEVEL) cat(msg, sep = "") else MESSAGE[LEVEL + 1] <<- msg
+    CONTEXT = function(msg = "", add = TRUE){
+        level = LEVEL
+        if(add) LEVEL <<- LEVEL + 1
+        if(is.null(msg) || msg == "") return(invisible(level))
+        msg = paste0(strrep(INDENT, level), msg, "\n")
+        if(PRINT_LEVEL >= LEVEL) cat(msg, sep = "") else MESSAGE[LEVEL] <<- msg
+        return(invisible(level))
         }
 
     PRINT = function(){
-        cat(MESSAGE[1:(LEVEL + 1)], sep = "")
-        MESSAGE[1:(LEVEL + 1)] <<- ""
+        cat(MESSAGE[seq_len(LEVEL)], sep = "")
+        MESSAGE[seq_len(LEVEL)] <<- ""
         }
 
     assign(".TESTS", environment(), envir = globalenv())
@@ -51,8 +54,7 @@ TEST_INIT = function(indent = "  ", print_level = 0){
 
 SET_CONTEXT = function(msg="", add = FALSE){
     env = get(".TESTS", envir = globalenv())
-    env$CONTEXT(msg)
-    if(add) env$LEVEL = env$LEVEL + 1
+    env$CONTEXT(msg, add)
     }
 
 
@@ -103,7 +105,6 @@ TEST = function(expr, msg = "is not TRUE!", call = NULL, test = TRUE){
 
 TEST_CONTEXT = function(msg, expr, unit = FALSE, set = FALSE){
     env = get(".TESTS", envir = globalenv())
-    env$CONTEXT(msg)
 
     if(set) env$SETS = env$SETS + 1
 
@@ -112,7 +113,7 @@ TEST_CONTEXT = function(msg, expr, unit = FALSE, set = FALSE){
         env$UNIT = FALSE
         }
 
-    env$LEVEL = {level = env$LEVEL} + 1
+    level = env$CONTEXT(msg)
     eval(expr)
     env$LEVEL = level
 
