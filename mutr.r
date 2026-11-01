@@ -1,6 +1,6 @@
 # mutr: minimal unit-testing framework
 # inspired by https://jera.com/techinfo/jtns/jtn002
-# version: 0.0.4
+# version: 0.0.5
 # https://github.com/J-Moravec/mutr
 
 
@@ -27,7 +27,7 @@ TEST_INIT = function(indent = "  ", print_level = 1){
     FAIL = 0
     TOTAL = 0
     SETS = 0
-    UNIT = FALSE
+    UNIT = FALSE # this flag signals that test unit failed
     LEVEL = 0
     INDENT = indent
     PRINT_LEVEL = print_level
@@ -36,7 +36,10 @@ TEST_INIT = function(indent = "  ", print_level = 1){
 
     CONTEXT = function(msg = "", add = TRUE){
         level = LEVEL
-        if(add) LEVEL <<- LEVEL + 1
+        if(add){
+            LEVEL <<- LEVEL + 1
+            MESSAGE[LEVEL] <<- ""
+            }
         if(is.null(msg) || msg == "") return(invisible(level))
         msg = paste0(strrep(INDENT, level), msg, "\n")
         if(PRINT_LEVEL >= LEVEL) cat(msg, sep = "") else MESSAGE[LEVEL] <<- msg
@@ -109,15 +112,25 @@ TEST_CONTEXT = function(msg, expr, unit = FALSE, set = FALSE){
     if(set) env$SETS = env$SETS + 1
 
     if(unit){
+        previous = env$UNIT
         env$TOTAL = env$TOTAL + 1
         env$UNIT = FALSE
+        completed = FALSE
+
+        on.exit({
+            if(!completed || env$UNIT) env$FAIL = env$FAIL + 1
+            env$UNIT = previous
+            }, add = TRUE)
         }
 
-    level = env$CONTEXT(msg)
-    eval(expr)
-    env$LEVEL = level
+    level = env$LEVEL
+    on.exit({env$LEVEL = level}, add = TRUE)
+    env$CONTEXT(msg)
 
-    if(env$UNIT) env$FAIL = env$FAIL + 1
+    # evaluate the expression
+    expr
+
+    if(unit) completed = TRUE
 
     invisible()
     }
@@ -129,13 +142,15 @@ TEST_UNIT = MUTR_PARTIAL(TEST_CONTEXT, unit = TRUE)
 
 TEST_FILE = function(file){
     env = get(".TESTS", envir = globalenv())
-    sys.source(file, env = environment(), chdir = TRUE)
-    env$LEVEL = 0
+    on.exit({env$LEVEL = 0}, add = TRUE)
+    sys.source(file, envir = new.env(parent = environment()), chdir = TRUE)
     invisible()
     }
 
 
 TEST_DIR = function(dir){
+    if(!dir.exists(dir))
+        stop("Directory \"", dir, "\" doesn't exist!")
     files = dir(dir, "^test[^.]*\\.[rR]$", full.names = TRUE)
     lapply(files, TEST_FILE)
 
@@ -146,7 +161,7 @@ TEST_DIR = function(dir){
 TEST_ERROR = function(
     expr, msg = "does not signal specified error!", pattern = "", call = NULL, test = TRUE){
     if(is.null(call)) call = paste0(deparse(substitute(expr)), collapse = "")
-    e = tryCatch(expr, error = function(e) e)
+    e = tryCatch({expr; NULL}, error = function(e) e)
     TEST((is.error(e) && grepl(pattern, conditionMessage(e))),
         call = call, msg = msg, test = test)
     }
@@ -154,7 +169,7 @@ TEST_ERROR = function(
 
 TEST_NOT_ERROR = function(expr, msg = "does signal an error!", call = NULL, test = TRUE){
     if(is.null(call)) call = paste0(deparse(substitute(expr)), collapse = "")
-    e = tryCatch(expr, error = function(e) e)
+    e = tryCatch({expr; NULL}, error = function(e) e)
     TEST(!is.error(e), call = call, msg = msg, test = test)
     }
 

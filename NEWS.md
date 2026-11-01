@@ -1,3 +1,7 @@
+# mutr 0.0.5
+
+* Bugfixing related to cleanup after context flags.
+
 # mutr 0.0.4
 
 * added `SET_CONTEXT`, `ADD_CONTEXT`, `TEST_CONTEXT`

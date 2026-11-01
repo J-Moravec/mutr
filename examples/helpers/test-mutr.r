@@ -1,5 +1,5 @@
 # test-mutr.r: tests for the unit-testing framework mutr
-# version: 0.0.4
+# version: 0.0.5
 # https://github.com/J-Moravec/mutr
 
 ## Helper functions
@@ -92,6 +92,57 @@ TEST__FAIL(
 TEST__CHECK(1, 3, 0)
 TEST__RESET()
 
+## Nested units potentially leaking UNIT flag
+TEST__FAIL({
+    TEST_UNIT("outer", {
+        ASSERT(FALSE)
+            TEST_UNIT("inner", {
+                ASSERT(TRUE)
+                })
+            })
+    }, f = identity, .msg = c("outer",  "  Error in FALSE: is not TRUE!"))
+TEST__CHECK(1, 2, 0)
+TEST__RESET()
+
+TEST__FAIL({
+    TEST_UNIT("outer", {
+        ASSERT(FALSE)
+            TEST_UNIT("inner", {
+                ASSERT(FALSE)
+                })
+            })
+    },
+    f = identity,
+    .msg = c(
+        "outer",  "  Error in FALSE: is not TRUE!",
+        "  inner", "    Error in FALSE: is not TRUE!"
+        )
+    )
+TEST__CHECK(2, 2, 0)
+TEST__RESET()
+
+# Failures are not double counted
+TEST__FAIL({
+    TEST_SET("set", {
+        TEST_UNIT("unit", {
+            ASSERT(FALSE)
+            })
+        })
+    },
+    f = identity,
+    .msg = c("set", "  unit", "    Error in FALSE: is not TRUE!")
+    )
+TEST__CHECK(1, 1, 1)
+TEST__PASS({
+    TEST_SET("another set", {
+        TEST(TRUE)
+        })
+    },
+    f = identity,
+    .msg = "another set"
+    )
+TEST__CHECK(1, 2, 2)
+TEST__RESET()
 
 # Context manipulation:
 TEST__FAIL(expr = {
@@ -101,6 +152,46 @@ TEST__FAIL(expr = {
     f = TEST_CONTEXT,
     .msg = c("  c", "    Error in FALSE: is not TRUE!")
     )
+TEST__RESET()
+
+# Context is properly reset
+TEST__FAIL({
+    TEST_SET("old parent", {
+        TEST_SET("old child", {
+            TEST(TRUE)
+            })
+        })
+    TEST_SET("new parent", {
+        TEST_SET(NULL, {
+            TEST(FALSE)
+            })
+        })
+    },
+    f = identity,
+    .msg = c("old parent", "new parent", "    Error in FALSE: is not TRUE!")
+    )
+TEST__RESET()
+
+
+# Context is restored after errors are encountered
+TEST__FAIL({
+    TEST_SET("outer", {
+        err = tryCatch(
+            TEST_SET("inner", {
+                ADD_CONTEXT("temporary")
+                stop("boom")
+                }),
+            error = identity
+            )
+        stopifnot(inherits(err, "error"), conditionMessage(err) == "boom",
+                  .TESTS$LEVEL == 1)
+        TEST(FALSE)
+        })
+    },
+    f = identity,
+    .msg = c("outer", "  Error in FALSE: is not TRUE!")
+    )
+stopifnot(.TESTS$LEVEL == 0)
 TEST__RESET()
 
 
@@ -117,9 +208,10 @@ TEST__RESET()
 
 TEST__PASS("foo", f = TEST_NOT_ERROR)
 TEST__PASS(1, f = TEST_NOT_ERROR)
+TEST__PASS(simpleError("foo"), f = TEST_NOT_ERROR)
 TEST__FAIL(stop("foo"), f = TEST_NOT_ERROR,
            .msg = "Error in stop(\"foo\"): does signal an error!")
-TEST__CHECK(1, 3, 0)
+TEST__CHECK(1, 4, 0)
 TEST__RESET()
 
 ## Check derived functions: ASSERT_ERROR, ASSERT_NOT_ERROR
